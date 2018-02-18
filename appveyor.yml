@@ -15,13 +15,4 @@ build:
   project: TinyGLTFSolution.sln
 
 after_build:
-- cmd: >-
-  cd examples\raytrace
-
-  dir
-
-  ..\..\tools\windows\premake5.exe vs2015
-
-  dir
-
-  msbuild raytrace.sln
+  - examples.bat
