@@ -14,12 +14,12 @@ build:
   parallel: true
   project: TinyGLTFSolution.sln
 
-test_script:
-    -cmd: >-
-        cd examples\\raytrace
+after_build:
+  - cmd: >-
+    cd examples\\raytrace
 
-        ..\\..\\tools\\windows\\premake5.exe vs2015
+    ..\\..\\tools\\windows\\premake5.exe vs2015
 
-        dir
+    dir
 
-        msbuild raytrace.sln
+    msbuild raytrace.sln
