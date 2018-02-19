@@ -16,6 +16,18 @@ premake5.tar.gz
 #built examples
 /examples/raytrace/bin/
 
+#visual studio files
+*.sln
+*.vcxproj*
+.vs
+
+#binary directories
+bin/
+obj/
+
+#runtime gui config
+imgui.ini
+
 # Prerequisites
 *.d
 
