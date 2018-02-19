@@ -28,6 +28,9 @@ obj/
 #runtime gui config
 imgui.ini
 
+#visual stuido code
+.vscode
+
 # Prerequisites
 *.d
 
