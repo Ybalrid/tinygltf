@@ -13,6 +13,9 @@ CTestTestfile.cmake
 premake5
 premake5.tar.gz
 
+#built examples
+/examples/raytrace/bin/
+
 # Prerequisites
 *.d
 
