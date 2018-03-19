@@ -12,6 +12,10 @@ static std::string GetFilePathExtension(const std::string &FileName) {
   return "";
 }
 
+/// type for temporary storage of the relation between gltf indices and the
+/// actual indices in the texture/material arrays
+using gltfIndexMap = std::map<int, int>;
+
 ///
 /// Loads glTF 2.0 mesh
 ///
@@ -59,6 +63,59 @@ bool LoadGLTF(const std::string &filename, float scale,
             << model.cameras.size() << " cameras\n"
             << model.scenes.size() << " scenes\n"
             << model.lights.size() << " lights\n";
+
+  // Iterate through all texture declaration in glTF file
+  gltfIndexMap texMap;
+  int idx = 0;
+  for (const auto &gltfTexture : model.textures) {
+    std::cout << "Found texture!\n";
+    Texture loadedTexture;
+    const auto &image = model.images[gltfTexture.source];
+    loadedTexture.components = image.component;
+    loadedTexture.width = image.width;
+    loadedTexture.height = image.height;
+
+    // This is a little hack, overuse the padding at the end of the texture to
+    // store the glTF ID
+    const auto size =
+        image.component * image.width * image.height * sizeof(unsigned char);
+    loadedTexture.image = new unsigned char[size];
+    memcpy(loadedTexture.image, image.image.data(), size);
+    const auto id = textures->size();
+    textures->push_back(loadedTexture);
+    texMap[idx++] = id;
+  }
+
+  gltfIndexMap matMap;
+  idx = 0;
+  for (const auto &gltfMaterial : model.materials) {
+    std::cerr << "Found material!" << gltfMaterial.name << "\n";
+    Material material;
+    // Material.id
+    for (const auto &param : gltfMaterial.values) {
+      std::cerr << param.first << '\n';
+      if (param.first == "baseColorTexture") {
+        const auto gltfTexID = param.second.TextureIndex();
+        material.diffuse_texid = texMap[gltfTexID];
+        break;
+      }
+    }
+
+    for (const auto &param : gltfMaterial.additionalValues) {
+      std::cerr << param.first << '\n';
+    }
+    for (const auto &param : gltfMaterial.extCommonValues) {
+      std::cerr << param.first << '\n';
+    }
+    for (const auto &param : gltfMaterial.extPBRValues) {
+      std::cerr << param.first << '\n';
+    }
+
+    const auto id = materials->size();
+    material.id = id;
+    matMap[idx++] = id;
+    materials->push_back(material);
+  }
 
   // Iterate through all the meshes in the glTF file
   for (const auto &gltfMesh : model.meshes) {
@@ -137,6 +194,9 @@ bool LoadGLTF(const std::string &filename, float scale,
         for (size_t i(0); i < indicesArrayPtr->size(); ++i) {
           std::cout << indices[i] << " ";
           loadedMesh.faces.push_back(indices[i]);
+
+          // Assign the material to that triangle too
+          loadedMesh.material_ids.push_back(matMap[meshPrimitive.material]);
         }
         std::cout << '\n';
       }
@@ -462,30 +522,11 @@ bool LoadGLTF(const std::string &filename, float scale,
       loadedMesh.pivot_xform[3][2] = bCenter.z;
       loadedMesh.pivot_xform[3][3] = 1.0f;
 
-      // TODO handle materials
-      for (size_t i{0}; i < loadedMesh.faces.size(); ++i)
-        loadedMesh.material_ids.push_back(materials->at(0).id);
-
       meshes->push_back(loadedMesh);
       ret = true;
     }
   }
 
-  // Iterate through all texture declaration in glTF file
-  for (const auto &gltfTexture : model.textures) {
-    std::cout << "Found texture!";
-    Texture loadedTexture;
-    const auto &image = model.images[gltfTexture.source];
-    loadedTexture.components = image.component;
-    loadedTexture.width = image.width;
-    loadedTexture.height = image.height;
-
-    const auto size =
-        image.component * image.width * image.height * sizeof(unsigned char);
-    loadedTexture.image = new unsigned char[size];
-    memcpy(loadedTexture.image, image.image.data(), size);
-    textures->push_back(loadedTexture);
-  }
   return ret;
 }
 }  // namespace example
